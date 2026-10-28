@@ -61,21 +61,6 @@ its output in the original layout. This path adds layout-conversion copies.
 | `is_highPrecision` | Boolean, default `True`; the device path always enables high precision |
 | Result | `(softmax_log_max_sum, attention_out)`: FP32 tensors of shapes `[B, Nq, Sq]` and `[B, Nq, Sq, 128]`; the first is an uninitialized compatibility placeholder and must not be read |
 
-Despite the internal name `windowLen`, this dense path uses `pre_tokens` to
-exclude padded KV positions from softmax in the last section. For original KV
-length `L`, pass `ceil(L / 256) * 256 - L` when nonzero, otherwise use the
-default. For example, padding 4097 tokens to 4352 requires `pre_tokens=255`.
-It is not a causal-mask selector or a supported general sliding-window API.
-
-`next_tokens` is not consumed by the device implementation and was removed
-from this API. Existing callers must omit the argument, including positional
-calls that previously supplied it before `is_highPrecision`.
-
-This migrated implementation remains FP16-only. Newer MindIE-SD Laser kernels
-have a separate BF16 path (BF16 Q/K, FP16 V, BF16 output, FP32 accumulation
-workspace). Accepting BF16 in the host dtype check alone would not enable that
-path here.
-
 ## Ada Block Sparse Attention (`torch.ops.npu.ada_block_sparse_attention`)
 
 Let `R = ceil(Sq / sparse_size)`, `C = ceil(Skv / sparse_size)` and
